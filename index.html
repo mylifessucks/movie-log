@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Movie Log</title>
+<meta name="description" content="내가 본 영화 기록">
+<link rel="preconnect" href="https://image.tmdb.org">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+  :root {
+    --bg: #f4f3ef; --fg: #121211; --sub: #8a8882; --line: #121211; --soft: #d9d7d1; --card: #e6e4de;
+    --display: "Archivo", "Noto Sans KR", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, monospace;
+    --body: "Noto Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0e0e0d; --fg: #eeede8; --sub: #7d7b76; --line: #eeede8; --soft: #2a2927; --card: #1c1b1a; color-scheme: dark; }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; overflow-x: hidden; background: var(--bg); color: var(--fg); font: 14px/1.55 var(--body); -webkit-font-smoothing: antialiased; }
+  ::selection { background: var(--fg); color: var(--bg); }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 32px 24px 72px; }
+  .mono { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+
+  /* 헤더 */
+  header { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 24px; padding-bottom: 14px; border-bottom: 2px solid var(--line); }
+  h1 { margin: 0; font-family: var(--display); font-stretch: 62%; font-weight: 900; text-transform: uppercase;
+    font-size: clamp(56px, 12vw, 168px); line-height: .82; letter-spacing: -.01em; }
+  .stats { text-align: right; display: grid; gap: 2px; padding-bottom: 6px; }
+  .stats b { font-family: var(--display); font-stretch: 75%; font-weight: 700; font-size: 28px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .stats div + div { margin-top: 10px; }
+  .stats .mono { color: var(--sub); display: block; margin-top: 3px; }
+  .stats .ig { color: var(--fg); text-decoration: none; margin: 0 0 22px; display: inline-block; justify-self: end;
+    border: 1px solid var(--line); padding: 7px 10px; transition: background .2s, color .2s; }
+  .stats .ig span { display: block; color: var(--sub); text-transform: none; margin-top: 2px; letter-spacing: .02em; }
+  .stats .ig:hover { background: var(--fg); color: var(--bg); }
+  .stats .ig:hover span { color: var(--bg); }
+
+  /* 컨트롤 */
+  .controls { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid var(--soft); position: sticky; top: 0; background: var(--bg); z-index: 5; }
+  .years { display: flex; flex-wrap: wrap; gap: 2px 14px; }
+  .chip { background: none; border: 0; padding: 4px 0; color: var(--sub); cursor: pointer; font-family: var(--mono);
+    font-size: 12px; letter-spacing: .04em; position: relative; }
+  .chip:hover { color: var(--fg); }
+  .chip[aria-pressed="true"] { color: var(--fg); }
+  .chip[aria-pressed="true"]::before { content: "▸"; position: absolute; left: -11px; }
+  .right { display: flex; gap: 24px; align-items: center; }
+  .sort { display: flex; gap: 14px; }
+  input[type=search] { background: none; border: 0; border-bottom: 1px solid var(--soft); color: var(--fg); padding: 4px 0;
+    font: 13px var(--body); width: 220px; border-radius: 0; }
+  input[type=search]::placeholder { color: var(--sub); font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+  input[type=search]:focus { outline: none; border-color: var(--fg); }
+
+  /* 목록 */
+  .group { margin-top: 48px; }
+  .group-head { display: flex; align-items: baseline; gap: 16px; border-bottom: 1px solid var(--line); padding-bottom: 8px; margin-bottom: 20px; }
+  .group-head h2 { margin: 0; font-family: var(--display); font-stretch: 62%; font-weight: 800; font-size: 56px; line-height: .85; }
+  .group-head .mono { color: var(--sub); }
+  .flat { margin-top: 28px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 36px 20px; align-items: start; }
+  .card { cursor: pointer; background: none; border: 0; padding: 0; text-align: left; color: inherit; font: inherit; display: flex; flex-direction: column; justify-content: flex-start; width: 100%; min-width: 0; }
+  .card .no { display: flex; justify-content: space-between; color: var(--sub); margin-bottom: 6px; }
+  .poster { aspect-ratio: 2 / 3; background: var(--card); overflow: hidden; position: relative; }
+  .poster img { width: 100%; height: 100%; object-fit: cover; display: block; transition: filter .35s ease, transform .5s ease; }
+  .poster .ph { position: absolute; inset: 0; display: flex; align-items: flex-end; padding: 10px; font-family: var(--display);
+    font-stretch: 62%; font-weight: 800; font-size: 26px; line-height: .95; text-transform: uppercase; word-break: keep-all; }
+  @media (hover: hover) {
+    .poster img { filter: grayscale(1) contrast(1.05); }
+    .card:hover .poster img, .card:focus-visible .poster img { filter: none; transform: scale(1.02); }
+  }
+  .card:focus-visible { outline: 1px solid var(--fg); outline-offset: 4px; }
+  .card .t { margin-top: 10px; font-weight: 700; font-size: 14px; line-height: 1.35; word-break: keep-all; }
+  .card .o { color: var(--sub); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card .meta { margin-top: 6px; display: flex; justify-content: space-between; gap: 8px; }
+  .card .meta span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .card .meta span:last-child { color: var(--sub); flex: none; }
+  .empty { color: var(--sub); padding: 64px 0; }
+
+  /* 상세 */
+  dialog { border: 1px solid var(--line); padding: 0; background: var(--bg); color: var(--fg); max-width: 820px; width: calc(100% - 32px); max-height: calc(100% - 32px); }
+  dialog::backdrop { background: rgba(10,10,10,.7); backdrop-filter: blur(2px); }
+  .dlg { display: grid; grid-template-columns: 240px 1fr; gap: 28px; padding: 28px; }
+  .dlg img { width: 100%; display: block; }
+  .dlg .no { color: var(--sub); margin-bottom: 10px; }
+  .dlg h3 { margin: 0; font-size: 26px; line-height: 1.25; word-break: keep-all; }
+  .dlg .orig { color: var(--sub); margin: 6px 0 20px; }
+  .dlg dl { display: grid; grid-template-columns: 88px 1fr; margin: 0 0 20px; border-top: 1px solid var(--soft); }
+  .dlg dt, .dlg dd { margin: 0; padding: 7px 0; border-bottom: 1px solid var(--soft); }
+  .dlg dt { color: var(--sub); }
+  .dlg dd { font-size: 13px; }
+  .dlg p { margin: 0 0 22px; font-size: 13px; line-height: 1.75; }
+  .links { display: flex; gap: 18px; }
+  .links a { color: var(--fg); text-decoration: none; border-bottom: 1px solid var(--fg); padding-bottom: 1px; }
+  .close { position: absolute; top: 10px; right: 14px; background: none; border: 0; color: var(--fg); cursor: pointer; }
+
+  footer { margin-top: 96px; padding-top: 14px; border-top: 2px solid var(--line); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; color: var(--sub); }
+  footer a { color: var(--fg); }
+  footer .tmdb img { display: block; height: 12px; width: auto; margin-bottom: 8px; }
+  footer .tmdb { max-width: 520px; }
+
+  @media (max-width: 640px) {
+    .wrap { padding: 20px 16px 56px; }
+    header { grid-template-columns: 1fr; gap: 14px; }
+    .stats { text-align: left; grid-auto-flow: column; justify-content: start; gap: 28px; }
+    .stats div + div { margin-top: 0; }
+    .stats .ig { margin: 0; align-self: end; }
+    .right { width: 100%; justify-content: space-between; gap: 16px; }
+    input[type=search] { width: 100%; flex: 1; }
+    .years, .sort { padding-left: 11px; }
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 14px; }
+    .group-head h2 { font-size: 44px; }
+    .dlg { grid-template-columns: 1fr; padding: 20px; gap: 18px; }
+    .dlg img { width: 150px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Movie<br>Log</h1>
+    <div class="stats">
+      <a class="ig mono" href="https://www.instagram.com/cleanseyourkarma/" target="_blank" rel="noopener">Instagram ↗<span>@cleanseyourkarma</span></a>
+      <div><b id="sTotal">-</b><span class="mono">Films</span></div>
+      <div><b id="sYear">-</b><span class="mono" id="sYearLabel">This year</span></div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="years" id="years" role="group" aria-label="관람연도"></div>
+    <div class="right">
+      <div class="sort" role="group" aria-label="정렬">
+        <button class="chip" data-sort="watched" aria-pressed="true">SEEN</button>
+        <button class="chip" data-sort="release" aria-pressed="false">RELEASED</button>
+      </div>
+      <input type="search" id="q" placeholder="Search title, director" aria-label="제목, 원제, 감독 검색">
+    </div>
+  </div>
+  <main id="list"></main>
+
+  <footer class="mono">
+    <span id="updated"></span>
+    <span class="tmdb"><a href="https://www.themoviedb.org/" target="_blank" rel="noopener"><img src="tmdb.svg" alt="TMDB" width="120" height="16"></a>
+    Data &amp; posters: TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB.</span>
+  </footer>
+</div>
+
+<dialog id="dlg"><button class="close mono" aria-label="닫기">Close ✕</button><div id="dlgBody"></div></dialog>
+
+<script>
+// 상태와 유틸
+const IMG = "https://image.tmdb.org/t/p/";
+const state = { year: "all", sort: "watched", q: "" };
+let movies = [];
+let regionName = (c) => c;
+try { const dn = new Intl.DisplayNames(["ko"], { type: "region" }); regionName = (c) => dn.of(c) || c; } catch (e) { /* 미지원 브라우저는 국가 코드 그대로 */ }
+
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const norm = (s) => String(s ?? "").toLowerCase().replace(/\s+/g, "");
+const seen = (m) => !m.wy ? "Unknown" : m.wm ? `${m.wy}.${String(m.wm).padStart(2, "0")}` : `${m.wy}`;
+const no = (n) => `No.${String(n).padStart(3, "0")}`;
+
+function filtered() {
+  const q = norm(state.q);
+  let list = movies.filter((m) => state.year === "all" || String(m.wy) === state.year);
+  if (q) list = list.filter((m) => norm(m.t).includes(q) || norm(m.o).includes(q) || (m.dir || []).some((d) => norm(d).includes(q)));
+  if (state.sort === "release") list = [...list].sort((a, b) => (b.ry || 0) - (a.ry || 0) || b.n - a.n);
+  return list;
+}
+
+function cardHtml(m) {
+  const poster = m.p
+    ? `<img src="${IMG}w342${m.p}" alt="" loading="lazy" decoding="async">`
+    : `<div class="ph">${esc(m.o || m.t)}</div>`;
+  return `<button class="card" data-n="${m.n}" aria-label="${esc(m.t)} 상세 보기">
+    <div class="no mono"><span>${no(m.n)}</span><span>${esc(m.ry || "")}</span></div>
+    <div class="poster">${poster}</div>
+    <div class="t">${esc(m.t)}</div>
+    ${m.o ? `<div class="o mono">${esc(m.o)}</div>` : ""}
+    <div class="meta mono"><span>${esc((m.dir || [])[0] || "")}</span><span>${esc(seen(m))}</span></div>
+  </button>`;
+}
+
+function render() {
+  const list = filtered();
+  const el = document.getElementById("list");
+  if (!list.length) { el.innerHTML = `<p class="empty mono">No films found.</p>`; return; }
+  // 관람순일 때는 관람연도별로 묶고, 개봉순이나 검색 중에는 한 덩어리로
+  if (state.sort === "watched" && !state.q) {
+    const groups = new Map();
+    list.forEach((m) => { const k = m.wy || "Unknown"; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(m); });
+    el.innerHTML = [...groups].map(([y, ms]) =>
+      `<section class="group"><div class="group-head"><h2>${esc(y)}</h2><span class="mono">${ms.length} Films</span></div>
+       <div class="grid">${ms.map(cardHtml).join("")}</div></section>`).join("");
+  } else {
+    el.innerHTML = `<section class="group"><div class="group-head"><h2>${state.q ? "Search" : "By release"}</h2><span class="mono">${list.length} Films</span></div>
+      <div class="grid">${list.map(cardHtml).join("")}</div></section>`;
+  }
+}
+
+function openDetail(m) {
+  const rows = [
+    ["Release", m.ry], ["Director", (m.dir || []).join(", ")], ["Genre", (m.g || []).join(", ")],
+    ["Runtime", m.rt ? `${m.rt}분` : ""], ["Country", (m.c || []).map(regionName).join(", ")], ["Seen", seen(m)],
+  ].filter(([, v]) => v);
+  const links = [
+    m.tm && `<a class="mono" href="https://www.themoviedb.org/movie/${m.tm}" target="_blank" rel="noopener">TMDB ↗</a>`,
+    m.im && `<a class="mono" href="https://www.imdb.com/title/${m.im}/" target="_blank" rel="noopener">IMDb ↗</a>`,
+  ].filter(Boolean).join("");
+  document.getElementById("dlgBody").innerHTML = `<div class="dlg">
+    <div>${m.p ? `<img src="${IMG}w500${m.p}" alt="${esc(m.t)} 포스터">` : ""}</div>
+    <div>
+      <div class="no mono">${no(m.n)}</div>
+      <h3>${esc(m.t)}</h3>
+      ${m.o ? `<div class="orig mono">${esc(m.o)}</div>` : `<div class="orig"></div>`}
+      <dl>${rows.map(([k, v]) => `<dt class="mono">${k}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
+      ${m.ov ? `<p>${esc(m.ov)}</p>` : ""}
+      <div class="links">${links}</div>
+    </div></div>`;
+  document.getElementById("dlg").showModal();
+}
+
+function setupControls() {
+  const thisYear = new Date().getFullYear();
+  const years = [...new Set(movies.map((m) => m.wy).filter(Boolean))].sort((a, b) => b - a);
+  const yEl = document.getElementById("years");
+  yEl.innerHTML = [`<button class="chip" data-year="all" aria-pressed="true">ALL</button>`,
+    ...years.map((y) => `<button class="chip" data-year="${y}" aria-pressed="false">${y}</button>`)].join("");
+  yEl.addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    state.year = b.dataset.year;
+    yEl.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+    render();
+  });
+  document.querySelector(".sort").addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    state.sort = b.dataset.sort;
+    document.querySelectorAll(".sort button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+    render();
+  });
+  document.getElementById("q").addEventListener("input", (e) => { state.q = e.target.value; render(); });
+  const byN = new Map(movies.map((m) => [m.n, m]));
+  document.getElementById("list").addEventListener("click", (e) => {
+    const c = e.target.closest(".card"); if (c) openDetail(byN.get(+c.dataset.n));
+  });
+  const d = document.getElementById("dlg");
+  d.querySelector(".close").addEventListener("click", () => d.close());
+  d.addEventListener("click", (e) => { if (e.target === d) d.close(); });
+
+  document.getElementById("sTotal").textContent = movies.length;
+  document.getElementById("sYear").textContent = movies.filter((m) => m.wy === thisYear).length;
+  document.getElementById("sYearLabel").textContent = `In ${thisYear}`;
+}
+
+fetch("movies.json", { cache: "no-cache" })
+  .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+  .then((data) => {
+    movies = data.movies || [];
+    document.getElementById("updated").textContent = `Updated ${data.updated}`;
+    setupControls();
+    render();
+  })
+  .catch((err) => {
+    document.getElementById("list").innerHTML = `<p class="empty mono">Failed to load (${esc(err.message)}).</p>`;
+  });
+</script>
+</body>
+</html>
