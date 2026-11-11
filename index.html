@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Movie Log</title>
 <meta name="description" content="내가 본 영화 기록">
+<script>
+  try { const t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) { /* 저장소 차단 시 시스템 설정 */ }
+</script>
 <link rel="preconnect" href="https://image.tmdb.org">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;700&display=swap">
@@ -17,8 +20,10 @@
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #0e0e0d; --fg: #eeede8; --sub: #7d7b76; --line: #eeede8; --soft: #2a2927; --card: #1c1b1a; color-scheme: dark; }
+    :root:not([data-theme="light"]) { --bg: #0e0e0d; --fg: #eeede8; --sub: #7d7b76; --line: #eeede8; --soft: #2a2927; --card: #1c1b1a; color-scheme: dark; }
   }
+  :root[data-theme="dark"] { --bg: #0e0e0d; --fg: #eeede8; --sub: #7d7b76; --line: #eeede8; --soft: #2a2927; --card: #1c1b1a; color-scheme: dark; }
+  body { transition: background-color .25s, color .25s; }
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
   body { margin: 0; overflow-x: hidden; background: var(--bg); color: var(--fg); font: 14px/1.55 var(--body); -webkit-font-smoothing: antialiased; }
@@ -34,11 +39,10 @@
   .stats b { font-family: var(--display); font-stretch: 75%; font-weight: 700; font-size: 28px; line-height: 1; font-variant-numeric: tabular-nums; }
   .stats div + div { margin-top: 10px; }
   .stats .mono { color: var(--sub); display: block; margin-top: 3px; }
-  .stats .ig { color: var(--fg); text-decoration: none; margin: 0 0 22px; display: inline-block; justify-self: end;
-    border: 1px solid var(--line); padding: 7px 10px; transition: background .2s, color .2s; }
-  .stats .ig span { display: block; color: var(--sub); text-transform: none; margin-top: 2px; letter-spacing: .02em; }
-  .stats .ig:hover { background: var(--fg); color: var(--bg); }
-  .stats .ig:hover span { color: var(--bg); }
+  header { position: relative; }
+  .util { position: absolute; top: 2px; right: 0; display: flex; gap: 18px; }
+  .util a, .util button { color: var(--sub); text-decoration: none; background: none; border: 0; padding: 2px 0; cursor: pointer; }
+  .util a:hover, .util button:hover { color: var(--fg); }
 
   /* 컨트롤 */
   .controls { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: center; justify-content: space-between;
@@ -108,7 +112,6 @@
     header { grid-template-columns: 1fr; gap: 14px; }
     .stats { text-align: left; grid-auto-flow: column; justify-content: start; gap: 28px; }
     .stats div + div { margin-top: 0; }
-    .stats .ig { margin: 0; align-self: end; }
     .right { width: 100%; justify-content: space-between; gap: 16px; }
     input[type=search] { width: 100%; flex: 1; }
     .years, .sort { padding-left: 11px; }
@@ -123,8 +126,11 @@
 <div class="wrap">
   <header>
     <h1>Movie<br>Log</h1>
+    <nav class="util">
+      <a class="mono" href="https://www.instagram.com/cleanseyourkarma/" target="_blank" rel="noopener" title="Instagram @cleanseyourkarma">Seen by ↗</a>
+      <button class="mono" id="theme" type="button"></button>
+    </nav>
     <div class="stats">
-      <a class="ig mono" href="https://www.instagram.com/cleanseyourkarma/" target="_blank" rel="noopener">Instagram ↗<span>@cleanseyourkarma</span></a>
       <div><b id="sTotal">-</b><span class="mono">Films</span></div>
       <div><b id="sYear">-</b><span class="mono" id="sYearLabel">This year</span></div>
     </div>
@@ -255,6 +261,26 @@ function setupControls() {
   document.getElementById("sYear").textContent = movies.filter((m) => m.wy === thisYear).length;
   document.getElementById("sYearLabel").textContent = `In ${thisYear}`;
 }
+
+// 테마 전환: 저장값이 없으면 시스템 설정을 따른다
+(function setupTheme() {
+  const btn = document.getElementById("theme");
+  const mq = window.matchMedia("(prefers-color-scheme: dark)");
+  const current = () => document.documentElement.dataset.theme || (mq.matches ? "dark" : "light");
+  const paint = () => {
+    const next = current() === "dark" ? "light" : "dark";
+    btn.textContent = next === "light" ? "Light ◑" : "Dark ◐";
+    btn.setAttribute("aria-label", next === "light" ? "라이트 모드로 전환" : "다크 모드로 전환");
+  };
+  btn.addEventListener("click", () => {
+    const next = current() === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem("theme", next); } catch (e) { /* 저장 실패해도 이번 방문엔 적용 */ }
+    paint();
+  });
+  mq.addEventListener?.("change", paint);
+  paint();
+})();
 
 fetch("movies.json", { cache: "no-cache" })
   .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
