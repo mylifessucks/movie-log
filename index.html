@@ -323,7 +323,6 @@ function setupControls() {
     const b = e.target.closest("button"); if (!b) return;
     state.view = b.dataset.view;
     document.querySelectorAll(".view button").forEach((x) => x.setAttribute("aria-pressed", x === b));
-    try { localStorage.setItem("view", state.view); } catch (e) { /* 저장 실패해도 이번 방문엔 적용 */ }
     hidePeek(); render();
   });
   // INDEX 보기: 행에 마우스를 올리면 포스터가 커서를 따라온다(터치 기기 제외)
@@ -351,9 +350,11 @@ function setupControls() {
     listEl.addEventListener("mouseleave", hidePeek);
     window.addEventListener("scroll", hidePeek, { passive: true });
   }
-  // 보기 선택은 브라우저에 저장해 다음 방문에도 유지
-  try { if (localStorage.getItem("view") === "index") { state.view = "index";
-    document.querySelectorAll(".view button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.view === "index")); } } catch (e) { /* 저장소 차단 시 기본 GRID */ }
+  // 첫 화면: 모바일(640px 이하)은 GRID, PC는 방문할 때마다 GRID와 INDEX 중 무작위
+  if (!window.matchMedia("(max-width: 640px)").matches && Math.random() < 0.5) {
+    state.view = "index";
+    document.querySelectorAll(".view button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.view === "index"));
+  }
   const d = document.getElementById("dlg");
   d.querySelector(".close").addEventListener("click", () => d.close());
   d.addEventListener("click", (e) => { if (e.target === d) d.close(); });
