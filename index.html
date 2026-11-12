@@ -160,6 +160,7 @@
 <script>
 // 상태와 유틸
 const IMG = "https://image.tmdb.org/t/p/";
+const DECADE_BEFORE = 2010; // 이 해부터는 연도별, 그 전은 연대별 묶음
 const state = { year: "all", sort: "watched", q: "" };
 let movies = [];
 let regionName = (c) => c;
@@ -195,17 +196,20 @@ function render() {
   const list = filtered();
   const el = document.getElementById("list");
   if (!list.length) { el.innerHTML = `<p class="empty mono">No films found.</p>`; return; }
-  // 관람순일 때는 관람연도별로 묶고, 개봉순이나 검색 중에는 한 덩어리로
-  if (state.sort === "watched" && !state.q) {
-    const groups = new Map();
-    list.forEach((m) => { const k = m.wy || "Unknown"; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(m); });
-    el.innerHTML = [...groups].map(([y, ms]) =>
-      `<section class="group"><div class="group-head"><h2>${esc(y)}</h2><span class="mono">${ms.length} Films</span></div>
-       <div class="grid">${ms.map(cardHtml).join("")}</div></section>`).join("");
-  } else {
-    el.innerHTML = `<section class="group"><div class="group-head"><h2>${state.q ? "Search" : "By release"}</h2><span class="mono">${list.length} Films</span></div>
+  // 검색 중에는 한 덩어리. 관람순은 관람연도별, 개봉순은 2010년 이후 연도별과 2009년 이전 연대별로 묶는다
+  if (state.q) {
+    el.innerHTML = `<section class="group"><div class="group-head"><h2>Search</h2><span class="mono">${list.length} Films</span></div>
       <div class="grid">${list.map(cardHtml).join("")}</div></section>`;
+    return;
   }
+  const keyOf = state.sort === "watched"
+    ? (m) => m.wy || "Unknown"
+    : (m) => !m.ry ? "Unknown" : m.ry >= DECADE_BEFORE ? m.ry : `${Math.floor(m.ry / 10) * 10}s`;
+  const groups = new Map();
+  list.forEach((m) => { const k = keyOf(m); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(m); });
+  el.innerHTML = [...groups].map(([y, ms]) =>
+    `<section class="group"><div class="group-head"><h2>${esc(y)}</h2><span class="mono">${ms.length} Films</span></div>
+     <div class="grid">${ms.map(cardHtml).join("")}</div></section>`).join("");
 }
 
 function openDetail(m) {
