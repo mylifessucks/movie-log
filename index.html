@@ -80,8 +80,9 @@
   .group-head { display: flex; align-items: baseline; gap: 16px; border-bottom: 1px solid var(--line); padding-bottom: 8px; margin-bottom: 20px; }
   .group-head h2 { margin: 0; font-family: var(--display); font-stretch: 62%; font-weight: 800; font-size: 56px; line-height: .85; }
   .group-head .mono { color: var(--sub); }
-  .group[style] .group-head h2 { color: var(--g); }
-  .group[style] .group-head { border-bottom-color: var(--g); }
+  /* 묶음 헤더는 묶음 색에 보조 글자색을 섞어 채도를 낮춘다 */
+  .group[style] .group-head h2 { color: color-mix(in srgb, var(--g) 55%, var(--sub)); }
+  .group[style] .group-head { border-bottom-color: color-mix(in srgb, var(--g) 40%, var(--soft)); }
   .flat { margin-top: 28px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 36px 20px; align-items: start; }
   .card { cursor: pointer; background: none; border: 0; padding: 0; text-align: left; color: inherit; font: inherit; display: flex; flex-direction: column; justify-content: flex-start; width: 100%; min-width: 0; }
