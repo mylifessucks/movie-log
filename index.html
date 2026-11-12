@@ -45,9 +45,9 @@
   .util a:hover, .util button:hover { color: var(--fg); }
 
   /* 컨트롤 */
-  .controls { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: center; justify-content: space-between;
+  .controls { display: flex; gap: 14px 40px; align-items: flex-start; justify-content: space-between;
     padding: 12px 0; border-bottom: 1px solid var(--soft); position: sticky; top: 0; background: var(--bg); z-index: 5; }
-  .years { display: flex; flex-wrap: wrap; gap: 2px 14px; }
+  .years { display: flex; flex-wrap: wrap; gap: 2px 14px; flex: 1; min-width: 0; }
   .chip { background: none; border: 0; padding: 4px 0; color: var(--sub); cursor: pointer; font-family: var(--mono);
     font-size: 12px; letter-spacing: .04em; position: relative; }
   .years .chip { text-transform: none; }
@@ -55,7 +55,7 @@
   .chip:hover { color: var(--fg); }
   .chip[aria-pressed="true"] { color: var(--fg); }
   .chip[aria-pressed="true"]::before { content: "▸"; position: absolute; left: -11px; }
-  .right { display: flex; gap: 24px; align-items: center; }
+  .right { display: flex; gap: 24px; align-items: center; flex: none; }
   .sort { display: flex; gap: 14px; }
   input[type=search] { background: none; border: 0; border-bottom: 1px solid var(--soft); color: var(--fg); padding: 4px 0;
     font: 13px var(--body); width: 220px; border-radius: 0; }
@@ -114,6 +114,7 @@
     header { grid-template-columns: 1fr; gap: 14px; }
     .stats { text-align: left; grid-auto-flow: column; justify-content: start; gap: 28px; }
     .stats div + div { margin-top: 0; }
+    .controls { flex-wrap: wrap; }
     .right { width: 100%; justify-content: space-between; gap: 16px; }
     input[type=search] { width: 100%; flex: 1; }
     .years, .sort { padding-left: 11px; }
@@ -133,8 +134,7 @@
       <button class="mono" id="theme" type="button"></button>
     </nav>
     <div class="stats">
-      <div><b id="sTotal">-</b><span class="mono">Films</span></div>
-      <div><b id="sYear">-</b><span class="mono" id="sYearLabel">This year</span></div>
+      <div><b id="sTotal">-</b><span class="mono" id="sLabel">Films seen</span></div>
     </div>
   </header>
 
@@ -238,7 +238,6 @@ function openDetail(m) {
 }
 
 function setupControls() {
-  const thisYear = new Date().getFullYear();
   const yEl = document.getElementById("years");
   // 네비게이션: 현재 정렬의 묶음과 편수. 정렬이 바뀌면 다시 그리고 ALL로 되돌린다
   const buildNav = () => {
@@ -273,8 +272,8 @@ function setupControls() {
   d.addEventListener("click", (e) => { if (e.target === d) d.close(); });
 
   document.getElementById("sTotal").textContent = movies.length;
-  document.getElementById("sYear").textContent = movies.filter((m) => m.wy === thisYear).length;
-  document.getElementById("sYearLabel").textContent = `In ${thisYear}`;
+  const firstYear = Math.min(...movies.map((m) => m.wy).filter(Boolean));
+  if (Number.isFinite(firstYear)) document.getElementById("sLabel").textContent = `Films seen since ${firstYear}`;
 }
 
 // 테마 전환: 저장값이 없으면 시스템 설정을 따른다
