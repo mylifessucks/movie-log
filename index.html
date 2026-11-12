@@ -31,6 +31,9 @@
   html { -webkit-text-size-adjust: 100%; }
   body { margin: 0; overflow-x: hidden; background: var(--bg); color: var(--fg); font: 14px/1.55 var(--body); -webkit-font-smoothing: antialiased; }
   ::selection { background: var(--accent); color: var(--bg); }
+  /* 필름 그레인: 화면 전체에 옅은 입자 질감(클릭을 막지 않음) */
+  body::after { content: ""; position: fixed; inset: 0; z-index: 50; pointer-events: none; opacity: .08; background: var(--fg);
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.6 0 0 0 -.45'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.6 0 0 0 -.45'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
   .wrap { max-width: 1240px; margin: 0 auto; padding: 32px 24px 72px; }
   .mono { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
 
