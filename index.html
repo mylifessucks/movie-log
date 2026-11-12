@@ -38,7 +38,12 @@
   .mono { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
 
   /* 헤더 */
-  header { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 24px; padding-bottom: 14px; border-bottom: 2px solid var(--line); }
+  header { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 24px; padding-bottom: 14px; }
+  /* 연도 비율 띠: 묶음별 편수 비율. 평소엔 배경색을 섞어 채도를 낮추고, 올리거나 고른 구간만 원래 색 */
+  .ratio { display: flex; height: 6px; gap: 2px; }
+  .ratio button { border: 0; padding: 0; min-width: 2px; background: color-mix(in srgb, var(--g) 45%, var(--bg)); cursor: pointer; transition: background-color .15s, transform .15s; transform-origin: bottom; }
+  .ratio button:hover, .ratio button[aria-pressed="true"] { background: var(--g); transform: scaleY(1.7); }
+  .ratio.filtered button:not([aria-pressed="true"]):not(:hover) { background: color-mix(in srgb, var(--g) 22%, var(--bg)); }
   h1 { margin: 0; font-family: var(--display); font-stretch: 62%; font-weight: 900; text-transform: uppercase;
     font-size: clamp(38px, 8vw, 112px); line-height: .82; letter-spacing: -.01em; }
   .stats { text-align: right; display: grid; gap: 2px; padding-bottom: 6px; }
@@ -184,6 +189,8 @@
     </div>
   </header>
 
+  <div class="ratio" id="ratio" role="group" aria-label="묶음별 편수 비율"></div>
+
   <div class="controls">
     <div class="years" id="years" role="group" aria-label="관람연도"></div>
     <div class="right">
@@ -313,16 +320,26 @@ function setupControls() {
     filtered().forEach((m) => { const k = groupKey(m); counts.set(k, (counts.get(k) || 0) + 1); });
     yEl.setAttribute("aria-label", state.sort === "watched" ? "관람연도" : "개봉연도");
     groupColor.clear(); [...counts.keys()].forEach((k, i) => groupColor.set(k, i % 7));
+    document.getElementById("ratio").innerHTML = [...counts].map(([k, c]) => `<button data-year="${esc(k)}" aria-pressed="false" title="${esc(k)} (${c})" aria-label="${esc(k)} ${c}편" style="--g: var(--c${groupColor.get(k)}); flex: ${c} 1 0"></button>`).join("");
+    document.getElementById("ratio").classList.remove("filtered");
     yEl.innerHTML = [`<button class="chip" data-year="all" aria-pressed="true">ALL</button>`,
       ...[...counts].map(([k, c]) => `<button class="chip" data-year="${esc(k)}" aria-pressed="false"${gStyle(k)}><i class="dot"></i>${esc(k)}<span class="cnt">(${c})</span></button>`)].join("");
   };
   { const q0 = state.q; state.q = ""; buildNav(); state.q = q0; }
   yEl.addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b) return;
-    state.year = b.dataset.year;
-    yEl.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
-    render();
+    pick(b.dataset.year);
   });
+  // 네비게이션과 비율 띠가 같은 선택 상태를 공유한다. 띠에서 같은 구간을 다시 누르면 ALL로
+  const rEl = document.getElementById("ratio");
+  function pick(y) {
+    state.year = y;
+    yEl.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.year === y));
+    rEl.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.year === y));
+    rEl.classList.toggle("filtered", y !== "all");
+    render();
+  }
+  rEl.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) pick(state.year === b.dataset.year ? "all" : b.dataset.year); });
   document.querySelector(".sort").addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b) return;
     state.sort = b.dataset.sort;
