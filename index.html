@@ -185,8 +185,8 @@ function cardHtml(m) {
   return `<button class="card" data-n="${m.n}" aria-label="${esc(m.t)} 상세 보기">
     <div class="no mono"><span>${no(m.n)}</span><span>${esc(m.ry || "")}</span></div>
     <div class="poster">${poster}</div>
-    <div class="t">${esc(m.t)}</div>
-    ${m.o ? `<div class="o mono">${esc(m.o)}</div>` : ""}
+    <div class="t">${esc(m.o || m.t)}</div>
+    ${m.o ? `<div class="o mono">${esc(m.t)}</div>` : ""}
     <div class="meta mono"><span>${esc((m.dir || [])[0] || "")}</span><span>${esc(seen(m))}</span></div>
   </button>`;
 }
@@ -221,8 +221,8 @@ function openDetail(m) {
     <div>${m.p ? `<img src="${IMG}w500${m.p}" alt="${esc(m.t)} 포스터">` : ""}</div>
     <div>
       <div class="no mono">${no(m.n)}</div>
-      <h3>${esc(m.t)}</h3>
-      ${m.o ? `<div class="orig mono">${esc(m.o)}</div>` : `<div class="orig"></div>`}
+      <h3>${esc(m.o || m.t)}</h3>
+      ${m.o ? `<div class="orig mono">${esc(m.t)}</div>` : `<div class="orig"></div>`}
       <dl>${rows.map(([k, v]) => `<dt class="mono">${k}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
       ${m.ov ? `<p>${esc(m.ov)}</p>` : ""}
       <div class="links">${links}</div>
