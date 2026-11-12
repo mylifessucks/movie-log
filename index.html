@@ -183,11 +183,11 @@ function cardHtml(m) {
     ? `<img src="${IMG}w342${m.p}" alt="" loading="lazy" decoding="async">`
     : `<div class="ph">${esc(m.o || m.t)}</div>`;
   return `<button class="card" data-n="${m.n}" aria-label="${esc(m.t)} 상세 보기">
-    <div class="no mono"><span>${no(m.n)}</span><span>${esc(m.ry || "")}</span></div>
+    <div class="no mono"><span>${no(m.n)}</span><span>${esc(seen(m))}</span></div>
     <div class="poster">${poster}</div>
     <div class="t">${esc(m.o || m.t)}</div>
     ${m.o ? `<div class="o mono">${esc(m.t)}</div>` : ""}
-    <div class="meta mono"><span>${esc((m.dir || [])[0] || "")}</span><span>${esc(seen(m))}</span></div>
+    <div class="meta mono"><span>${esc((m.dir || [])[0] || "")}</span><span>${esc(m.ry || "")}</span></div>
   </button>`;
 }
 
