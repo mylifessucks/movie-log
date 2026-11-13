@@ -235,16 +235,19 @@
 <script>
 // 상태와 유틸
 const IMG = "https://image.tmdb.org/t/p/";
-// 개봉순 묶음: 2020년 이후는 연도별, 2015-19, 2010-14, 2000s, 그 이전은 한 묶음
-const YEARLY_FROM = 2020;
-let oldestYear = 1900;
+// 개봉순 묶음: 2000년 이후 5년 단위(2000s만 10년), 1990s, 1989년 이전 한 묶음
+// 라벨 끝 연도는 데이터 기준(최신 묶음 = 2025-26, 가장 옛 묶음 = 1943-89)
+let oldestYear = 1900, newestYear = 2100;
+const yy = (y) => String(y).slice(2);
 const releaseKey = (y) => {
   if (!y) return "Unknown";
-  if (y >= YEARLY_FROM) return String(y);
-  if (y >= 2015) return "2015-19";
-  if (y >= 2010) return "2010-14";
+  if (y >= 2010) {
+    const s = y - (y % 5), e = Math.min(s + 4, newestYear);
+    return e > s ? `${s}-${yy(e)}` : String(s);
+  }
   if (y >= 2000) return "2000s";
-  return `${oldestYear}-99`;
+  if (y >= 1990) return "1990s";
+  return `${oldestYear}-89`;
 };
 // 묶음 키: 관람순은 관람연도, 개봉순은 releaseKey
 const groupKey = (m) => state.sort === "watched" ? String(m.wy || "Unknown") : releaseKey(m.ry);
@@ -297,7 +300,7 @@ function render() {
   const list = filtered();
   const el = document.getElementById("list");
   if (!list.length) { el.innerHTML = `<p class="empty mono">No films found.</p>`; return; }
-  // 검색 중에는 한 덩어리. 관람순은 관람연도별, 개봉순은 2010년 이후 연도별과 2009년 이전 연대별로 묶는다
+  // 검색 중에는 한 덩어리. 관람순은 관람연도별, 개봉순은 releaseKey 묶음
   if (state.q) {
     el.innerHTML = `<section class="group"><div class="group-head"><h2>Search</h2><span class="mono">${list.length} Films</span></div>
       <div class="${box}">${list.map(item).join("")}</div></section>`;
@@ -448,6 +451,7 @@ fetch("movies.json", { cache: "no-cache" })
   .then((data) => {
     movies = data.movies || [];
     oldestYear = Math.min(...movies.map((m) => m.ry).filter(Boolean));
+    newestYear = Math.max(...movies.map((m) => m.ry).filter(Boolean));
     document.getElementById("updated").textContent = `Updated ${data.updated}`;
     setupControls();
     render();
